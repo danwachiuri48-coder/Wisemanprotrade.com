@@ -1,1 +1,79 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>Wiseman Pro Trade Elite Terminal</title>\n</head>\n<body>\n    <h1>Welcome to the Wiseman Pro Trade Elite Terminal Trading Application</h1>\n    <p>Current Date and Time (UTC): 2026-04-10 07:12:26</p>\n    <p>Current User's Login: danwachiuri48-coder</p>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiseman Pro Trade | Elite Terminal</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #060809; color: #94a3b8; font-family: sans-serif; }
+        .trade-btn { transition: all 0.2s; position: relative; overflow: hidden; }
+        .trade-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <nav class="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#0e1117]">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/20">W</div>
+            <h1 class="text-xl font-black tracking-tighter text-white uppercase">WISEMAN <span class="text-blue-500 text-sm italic">PRO TRADE</span></h1>
+        </div>
+        <div class="bg-[#151921] px-4 py-1 rounded-full border border-white/5 flex items-center gap-4">
+            <span class="text-[10px] font-bold text-gray-500">BALANCE</span>
+            <span class="text-green-400 font-mono font-bold">$10,250.45</span>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex">
+        <div class="flex-1 relative p-6">
+            <div id="chart" class="w-full h-full rounded-2xl border border-white/5 bg-[#0e1117]"></div>
+            <div class="absolute top-10 left-12 z-10">
+                <p class="text-[10px] text-blue-500 font-bold tracking-widest uppercase">Volatility 100 (1s)</p>
+                <h2 id="live-price" class="text-5xl font-mono font-bold text-white tracking-tighter">0.00</h2>
+            </div>
+        </div>
+
+        <aside class="w-80 bg-[#0e1117] border-l border-white/5 p-6 flex flex-col gap-6">
+            <div>
+                <label class="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-2 block">Stake (USD)</label>
+                <input type="number" value="10.00" class="w-full bg-[#151921] border border-white/10 rounded-xl p-4 text-white font-bold text-lg focus:border-blue-500 outline-none">
+            </div>
+            
+            <div class="mt-auto space-y-4">
+                <button class="trade-btn w-full h-24 bg-green-600 hover:bg-green-500 rounded-2xl flex flex-col items-center justify-center text-white">
+                    <span class="font-black text-2xl italic">HIGHER</span>
+                    <span class="text-[10px] opacity-70">Payout: +95%</span>
+                </button>
+                <button class="trade-btn w-full h-24 bg-red-600 hover:bg-red-500 rounded-2xl flex flex-col items-center justify-center text-white">
+                    <span class="font-black text-2xl italic">LOWER</span>
+                    <span class="text-[10px] opacity-70">Payout: +95%</span>
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // WebSocket Market Data
+        const priceEl = document.getElementById('live-price');
+        const chartContainer = document.getElementById('chart');
+        const chart = LightweightCharts.createChart(chartContainer, {
+            layout: { background: { color: '#0e1117' }, textColor: '#94a3b8' },
+            grid: { vertLines: { visible: false }, horzLines: { color: '#1e293b' } },
+            timeScale: { borderVisible: false, timeVisible: true, secondsVisible: true }
+        });
+        const series = chart.addAreaSeries({ lineColor: '#3b82f6', topColor: 'rgba(59, 130, 246, 0.2)', bottomColor: 'transparent' });
+
+        const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+        ws.onopen = () => ws.send(JSON.stringify({ ticks: 'R_100', subscribe: 1 }));
+        ws.onmessage = (msg) => {
+            const data = JSON.parse(msg.data);
+            if (data.tick) {
+                const p = data.tick.quote;
+                priceEl.innerText = p.toFixed(2);
+                series.update({ time: data.tick.epoch, value: p });
+            }
+        };
+    </script>
+</body>
+</html>
